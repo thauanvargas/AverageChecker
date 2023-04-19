@@ -1,4 +1,4 @@
-AverageCheckerLauncher.class
-AverageChecker.class
+MarketUtils.class
 parsers\HTradingItem.class
+MarketUtilsLauncher.class
 parsers\HTradingItemList.class

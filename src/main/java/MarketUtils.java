@@ -118,7 +118,7 @@ public class MarketUtils extends ExtensionForm {
                         callItemAverage(itemType, 1);
                         HPacket packet = gAsync.awaitPacket(new AwaitingPacket("MarketplaceItemStats", HMessage.Direction.TOCLIENT, 1000));
                         int value = packet.readInteger();
-                        sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"AverageChecker: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
+                        sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
                     }).start();
                 }
             }
@@ -173,7 +173,7 @@ public class MarketUtils extends ExtensionForm {
             itemName = typeIdToNameFloor.get(itemTypeId);
         }
         else {
-            sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"AverageChecker: I couldn't identify the item!\"}{i:0}{i:2}{i:0}{i:-1}"));
+            sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: I couldn't identify the item!\"}{i:0}{i:2}{i:0}{i:-1}"));
             return;
         }
 
@@ -193,9 +193,9 @@ public class MarketUtils extends ExtensionForm {
                 value = packet.readInteger();
             }
             if(value == 0)
-                sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"AverageChecker: The item " + itemName + " has no average in the marketplace!\"}{i:0}{i:2}{i:0}{i:-1}"));
+                sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " has no average in the marketplace!\"}{i:0}{i:2}{i:0}{i:-1}"));
             else
-                sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"AverageChecker: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
+                sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
         }
     }
     public void callItemAverage (int itemType, int wallItem) {
