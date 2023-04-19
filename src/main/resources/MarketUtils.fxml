@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="180.0" prefWidth="384.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="MarketUtils">
+   <children>
+      <ImageView fitHeight="116.0" fitWidth="334.0" layoutX="122.0" layoutY="143.0" opacity="0.78" pickOnBounds="true" preserveRatio="true">
+         <Image url="@icon.png" />
+      </ImageView>
+      <CheckBox fx:id="enabledOnDoubleClick" layoutX="94.0" layoutY="107.0" mnemonicParsing="false" text="Enable on Double Click Item" />
+      <CheckBox fx:id="enabledOnTrade" layoutX="94.0" layoutY="82.0" mnemonicParsing="false" text="Enable on Trades" />
+      <Label layoutX="123.0" layoutY="38.0" text="Market Utils v1.0" />
+   </children>
+</AnchorPane>
