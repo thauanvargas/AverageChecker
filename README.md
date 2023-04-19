@@ -11,11 +11,11 @@ MarketUtils is a extension to check Average of a Item in the room, or in Trades,
 - I didn't do a check to know if you can be banned by spamming the check average on MarketPlace so no feature was done to avoid if this happens (use at own risk)
 
 # How to use
---- Trading Average
+- Trading Average
 1. Click Enable on Trade to check trading items average when you start trading
 2. Start a Trade and put a item, or wait for the other player to put a item.
 3. You'll receive a message with each Item average!
---- Double click furni 
+- Double click furni 
 1. Click Enable Double Click
 2. Double Click a Item in the room
 3. You'll receive a message with each Item average!
