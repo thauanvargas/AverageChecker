@@ -192,7 +192,10 @@ public class MarketUtils extends ExtensionForm {
             }else {
                 value = packet.readInteger();
             }
-            sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"AverageChecker: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
+            if(value == 0)
+                sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"AverageChecker: The item " + itemName + " has no average in the marketplace!\"}{i:0}{i:2}{i:0}{i:-1}"));
+            else
+                sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"AverageChecker: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
         }
     }
     public void callItemAverage (int itemType, int wallItem) {
