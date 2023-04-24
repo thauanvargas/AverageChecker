@@ -5,7 +5,9 @@ import gearth.extensions.extra.tools.GAsync;
 import gearth.extensions.parsers.*;
 import gearth.protocol.HMessage;
 import gearth.protocol.HPacket;
+import javafx.application.Platform;
 import javafx.scene.control.*;
+import javafx.scene.paint.Color;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,21 +22,32 @@ import java.util.*;
 @ExtensionInfo(
         Title = "Market Utils",
         Description = "Market Utils based on Rocawear's",
-        Version = "1.0",
+        Version = "2.0",
         Author = "Thauan"
 )
 
 public class MarketUtils extends ExtensionForm {
     public static MarketUtils RUNNING_INSTANCE;
     public CheckBox enabledOnTrade;
+    public ComboBox<String> comboAddItem;
+    public TextField searchItem;
+    public CheckBox enabledOnDoubleClick;
+    public Button addItemButton;
+    public ListView<String> listOfSearchingItems;
+    public CheckBox enabledSearchRoom;
+    public Button clearSearchingItemList;
+    public Label labelInfo;
     TreeMap<Integer, String> typeIdToNameFloor = new TreeMap<>();
     TreeMap<Integer, String> typeIdToNameWall = new TreeMap<>();
     TreeMap<Integer, Integer> furniIdToTypeId = new TreeMap<>();
-
+    TreeMap<Integer, Integer> wallIdToTypeId = new TreeMap<>();
     List<Integer> tradedItemsChecked = new ArrayList<>();
+    List<Integer> searchedItemsChecked = new ArrayList<>();
+    TreeMap<Integer, String> searchItemRoomTypeIds = new TreeMap<>();
     public String host;
+    public JSONArray wallJson;
+    public JSONArray floorJson;
     public GAsync gAsync;
-    public CheckBox enabledOnDoubleClick;
     public int habboIndex = -1;
     public int habboId;
     private static final TreeMap<String, String> codeToDomainMap = new TreeMap<>();
@@ -50,6 +63,8 @@ public class MarketUtils extends ExtensionForm {
         codeToDomainMap.put("us", ".com");
     }
 
+
+
     @Override
     protected void onStartConnection() {
         System.out.println("Market Utils started it's connection!");
@@ -60,12 +75,93 @@ public class MarketUtils extends ExtensionForm {
                 System.out.println("Game data retrieved!");
             } catch (Exception e) {
                 System.out.println("There was a error, the extension will be disabled.");
+                Platform.runLater(() -> {
+                    labelInfo.setText("There was a error, the extension will be disabled.");
+                    labelInfo.setTextFill(Color.RED);
+                });
+                listOfSearchingItems.setDisable(true);
+                comboAddItem.setDisable(true);
+                searchItem.setDisable(true);
+                enabledSearchRoom.setDisable(true);
                 enabledOnTrade.setDisable(true);
                 enabledOnDoubleClick.setDisable(true);
                 System.out.println(e);
             }
         }).start();
         gAsync = new GAsync(this);
+
+        searchItem.textProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println(newValue);
+            comboAddItem.getItems().clear();
+            floorJson.forEach(o -> {
+                JSONObject item = (JSONObject) o;
+                try {
+                    String itemName = item.get("name").toString();
+                    if(itemName.toLowerCase().contains(newValue.toLowerCase()) && !comboAddItem.getItems().contains(itemName))
+                        comboAddItem.getItems().add(itemName + " - (F)");
+                }catch (JSONException ignored) {}
+            });
+            wallJson.forEach(o -> {
+                JSONObject item = (JSONObject) o;
+                try {
+                    String itemName = item.get("name").toString();
+                    if(itemName.toLowerCase().contains(newValue.toLowerCase()) && !comboAddItem.getItems().contains(itemName))
+                        comboAddItem.getItems().add(itemName + " - (W)");
+                }catch (JSONException ignored) {}
+            });
+        });
+
+        clearSearchingItemList.setOnAction(event -> {
+            searchedItemsChecked.clear();
+            searchItemRoomTypeIds.clear();
+            listOfSearchingItems.getItems().clear();
+            Platform.runLater(() -> {
+                labelInfo.setText("List of Searching Items cleared.");
+                labelInfo.setTextFill(Color.GREEN);
+            });
+        });
+
+        addItemButton.setOnAction(event -> {
+            if(comboAddItem.getSelectionModel().isEmpty()) {
+                Platform.runLater(() -> {
+                    labelInfo.setText("Please select a item in the Box");
+                    labelInfo.setTextFill(Color.RED);
+                });
+                return;
+            };
+            String itemName = comboAddItem.getSelectionModel().getSelectedItem();
+            String finalItemName = itemName.substring(0, itemName.length() - 6);;
+            System.out.println(itemName);
+            if(itemName.contains("(F)")) {
+            System.out.println("is F");
+                floorJson.forEach(o -> {
+                    JSONObject item = (JSONObject) o;
+                    int typeId = item.getInt("id");
+                    if(item.get("name").toString().equalsIgnoreCase(finalItemName) && !searchItemRoomTypeIds.containsKey(typeId)) {
+                        searchItemRoomTypeIds.put(typeId, finalItemName);
+                        listOfSearchingItems.getItems().add(finalItemName);
+                        Platform.runLater(() -> {
+                            labelInfo.setText("Item " + finalItemName + " added to Searching List. Don't forget to Check \"Room Item Search\"");
+                            labelInfo.setTextFill(Color.GREEN);
+                        });
+                    }
+                });
+            }
+            if(itemName.contains("(W)")) {
+                wallJson.forEach(o -> {
+                    JSONObject item = (JSONObject) o;
+                    int typeId = item.getInt("id");
+                    if(item.get("name").toString().equalsIgnoreCase(finalItemName) && !searchItemRoomTypeIds.containsKey(typeId)) {
+                        searchItemRoomTypeIds.put(typeId, finalItemName);
+                        listOfSearchingItems.getItems().add(finalItemName);
+                        Platform.runLater(() -> {
+                            labelInfo.setText("Item " + finalItemName + " added to Searching List.");
+                            labelInfo.setTextFill(Color.GREEN);
+                        });
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -120,8 +216,22 @@ public class MarketUtils extends ExtensionForm {
                         int value = packet.readInteger();
                         sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
                     }).start();
+                    hMessage.setBlocked(true);
                 }
             }
+//            if(wallIdToTypeId.containsKey(itemId)) {
+//                if(enabledOnDoubleClick.isSelected()) {
+//                    new Thread(() -> {
+//                        int itemType = wallIdToTypeId.get(itemId);
+//                        String itemName = typeIdToNameFloor.get(itemType);
+//                        callItemAverage(itemType, 1);
+//                        HPacket packet = gAsync.awaitPacket(new AwaitingPacket("MarketplaceItemStats", HMessage.Direction.TOCLIENT, 1000));
+//                        int value = packet.readInteger();
+//                        sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
+//                    }).start();
+//                    hMessage.setBlocked(true);
+//                }
+//            }
         });
 
         intercept(HMessage.Direction.TOCLIENT, "TradingItemList", hMessage -> {
@@ -146,14 +256,43 @@ public class MarketUtils extends ExtensionForm {
 
         });
 
+        intercept(HMessage.Direction.TOCLIENT, "GetGuestRoomResult", hMessage -> {
+            if(enabledSearchRoom.isSelected()) {
+                for (Map.Entry<Integer, Integer> entry : furniIdToTypeId.entrySet()) {
+                    if(searchItemRoomTypeIds.containsKey(entry.getValue())) {
+                        if(!searchedItemsChecked.contains(entry.getValue())) {
+                            searchedItemsChecked.add(entry.getValue());
+                            sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item you are searching, " + searchItemRoomTypeIds.get(entry.getValue()) + " is in this room!\"}{i:0}{i:2}{i:0}{i:-1}"));
+                        }
+                    }
+                }
+                for (Map.Entry<Integer, Integer> entry : wallIdToTypeId.entrySet()) {
+                    if(searchItemRoomTypeIds.containsKey(entry.getValue())) {
+                        if(!searchedItemsChecked.contains(entry.getValue())) {
+                            searchedItemsChecked.add(entry.getValue());
+                            sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item you are searching, " + searchItemRoomTypeIds.get(entry.getValue()) + " is in this room!\"}{i:0}{i:2}{i:0}{i:-1}"));
+                        }
+                    }
+                }
+            }
+        });
+
         intercept(HMessage.Direction.TOCLIENT, "Objects", hMessage -> {
             try{
+                searchedItemsChecked.clear();
                 for (HFloorItem hFloorItem: HFloorItem.parse(hMessage.getPacket())){
                     if(!furniIdToTypeId.containsKey(hFloorItem.getId())){
                         furniIdToTypeId.put(hFloorItem.getId(), hFloorItem.getTypeId());
                     }
+
                 }
-            }catch (Exception e) { System.out.println("Exception here!"); }
+                // need find fix for getting wallitem type ids
+//                for(HWallItem hWallItem : HWallItem.parse(hMessage.getPacket())) {
+//                    if(!wallIdToTypeId.containsKey(hWallItem.getId())){
+//                        wallIdToTypeId.put(hWallItem.getId(), hWallItem.getTypeId());
+//                    }
+//                }
+            }catch (Exception e) { System.out.println(e); }
         });
 
         intercept(HMessage.Direction.TOCLIENT, "TradingClose", hMessage -> {
@@ -205,7 +344,7 @@ public class MarketUtils extends ExtensionForm {
     public void getGameFurniData() throws Exception{
         String url = "https://www.habbo%s/gamedata/furnidata_json/1";
         JSONObject jsonObj = new JSONObject(IOUtils.toString(new URL(String.format(url, codeToDomainMap.get(host))).openStream(), StandardCharsets.UTF_8));
-        JSONArray floorJson = jsonObj.getJSONObject("roomitemtypes").getJSONArray("furnitype");
+        floorJson = jsonObj.getJSONObject("roomitemtypes").getJSONArray("furnitype");
         floorJson.forEach(o -> {
             JSONObject item = (JSONObject)o;
             try {
@@ -214,7 +353,7 @@ public class MarketUtils extends ExtensionForm {
             }catch (JSONException ignored) {}
         });
 
-        JSONArray wallJson = jsonObj.getJSONObject("wallitemtypes").getJSONArray("furnitype");
+        wallJson = jsonObj.getJSONObject("wallitemtypes").getJSONArray("furnitype");
         wallJson.forEach(o -> {
                 JSONObject item = (JSONObject)o;
                 try {
