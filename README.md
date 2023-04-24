@@ -30,4 +30,4 @@ MarketUtils is a extension to check Average of a Item in the room, or in Trades,
 3. You'll receive a message with each Item average!
 
 # TODO:
-- Add a feature to check if a item you are looking for is in the current room!
+- IDK, give me ideas
