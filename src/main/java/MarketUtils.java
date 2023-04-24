@@ -63,8 +63,6 @@ public class MarketUtils extends ExtensionForm {
         codeToDomainMap.put("us", ".com");
     }
 
-
-
     @Override
     protected void onStartConnection() {
         System.out.println("Market Utils started it's connection!");
@@ -280,6 +278,7 @@ public class MarketUtils extends ExtensionForm {
         intercept(HMessage.Direction.TOCLIENT, "Objects", hMessage -> {
             try{
                 searchedItemsChecked.clear();
+                furniIdToTypeId.clear();
                 for (HFloorItem hFloorItem: HFloorItem.parse(hMessage.getPacket())){
                     if(!furniIdToTypeId.containsKey(hFloorItem.getId())){
                         furniIdToTypeId.put(hFloorItem.getId(), hFloorItem.getTypeId());
