@@ -7,9 +7,6 @@ MarketUtils is a extension to check Average of a Item in the room, or in Trades,
 - Check Average of each item in trades
 
 # Known Issues
-- Need to fix somethings regarding Wall Furni as they are a bit different
-- Maybe wall items on trades, aren't with correct values right now
-- Doesn't check wallitems on double click
 - I didn't do a check to know if you can be banned by spamming the check average on MarketPlace so no feature was done to avoid if this happens (use at own risk)
 
 
