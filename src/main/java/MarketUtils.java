@@ -21,8 +21,8 @@ import java.util.*;
 
 @ExtensionInfo(
         Title = "Market Utils",
-        Description = "Market Utils based on Rocawear's",
-        Version = "2.1",
+        Description = "A cool extension for shopping",
+        Version = "2.2",
         Author = "Thauan"
 )
 
@@ -37,6 +37,7 @@ public class MarketUtils extends ExtensionForm {
     public CheckBox enabledSearchRoom;
     public Button clearSearchingItemList;
     public Label labelInfo;
+    public Label labelVersion;
     TreeMap<Integer, String> typeIdToNameFloor = new TreeMap<>();
     TreeMap<Integer, String> typeIdToNameWall = new TreeMap<>();
     TreeMap<Integer, Integer> furniIdToTypeId = new TreeMap<>();
@@ -66,6 +67,7 @@ public class MarketUtils extends ExtensionForm {
     @Override
     protected void onStartConnection() {
         System.out.println("Market Utils started it's connection!");
+        labelVersion.setText("Market Utils v" + MarketUtils.class.getAnnotation(ExtensionInfo.class).Version());
         new Thread(() -> {
             System.out.println("Getting game data...");
             try {
