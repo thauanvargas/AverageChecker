@@ -200,6 +200,25 @@ public class MarketUtils extends ExtensionForm {
             }
         });
 
+        intercept(HMessage.Direction.TOSERVER, "UseWallItem", hMessage -> {
+            HPacket hPacket = hMessage.getPacket();
+            int itemId = hPacket.readInteger();
+            System.out.println("WIT " + wallIdToTypeId);
+                if(enabledOnDoubleClick.isSelected()) {
+                    if(wallIdToTypeId.containsKey(itemId)) {
+                    new Thread(() -> {
+                        int itemType = wallIdToTypeId.get(itemId);
+                        String itemName = typeIdToNameWall.get(itemType);
+                        callItemAverage(itemType, 2);
+                        HPacket packet = gAsync.awaitPacket(new AwaitingPacket("MarketplaceItemStats", HMessage.Direction.TOCLIENT, 1000));
+                        int value = packet.readInteger();
+                        sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
+                    }).start();
+                    hMessage.setBlocked(true);
+                }
+            }
+        });
+
         intercept(HMessage.Direction.TOSERVER, "UseFurniture", hMessage -> {
             HPacket hPacket = hMessage.getPacket();
             int itemId = hPacket.readInteger();
@@ -217,19 +236,6 @@ public class MarketUtils extends ExtensionForm {
                     hMessage.setBlocked(true);
                 }
             }
-//            if(wallIdToTypeId.containsKey(itemId)) {
-//                if(enabledOnDoubleClick.isSelected()) {
-//                    new Thread(() -> {
-//                        int itemType = wallIdToTypeId.get(itemId);
-//                        String itemName = typeIdToNameFloor.get(itemType);
-//                        callItemAverage(itemType, 1);
-//                        HPacket packet = gAsync.awaitPacket(new AwaitingPacket("MarketplaceItemStats", HMessage.Direction.TOCLIENT, 1000));
-//                        int value = packet.readInteger();
-//                        sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " average in marketplace is " + value +  "c !\"}{i:0}{i:2}{i:0}{i:-1}"));
-//                    }).start();
-//                    hMessage.setBlocked(true);
-//                }
-//            }
         });
 
         intercept(HMessage.Direction.TOCLIENT, "TradingItemList", hMessage -> {
@@ -250,29 +256,33 @@ public class MarketUtils extends ExtensionForm {
                         }).start();
                     }
                 }
-            }catch (Exception ignored) {}
+            }catch (Exception e) {
+                System.out.println(e);
+            }
 
         });
 
         intercept(HMessage.Direction.TOCLIENT, "GetGuestRoomResult", hMessage -> {
             if(enabledSearchRoom.isSelected()) {
                 for (Map.Entry<Integer, Integer> entry : furniIdToTypeId.entrySet()) {
-                    if(searchItemRoomTypeIds.containsKey(entry.getValue())) {
-                        if(!searchedItemsChecked.contains(entry.getValue())) {
-                            searchedItemsChecked.add(entry.getValue());
-                            sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item you are searching, " + searchItemRoomTypeIds.get(entry.getValue()) + " is in this room!\"}{i:0}{i:2}{i:0}{i:-1}"));
-                        }
-                    }
+                    isItemInRoom(entry.getValue());
                 }
                 for (Map.Entry<Integer, Integer> entry : wallIdToTypeId.entrySet()) {
-                    if(searchItemRoomTypeIds.containsKey(entry.getValue())) {
-                        if(!searchedItemsChecked.contains(entry.getValue())) {
-                            searchedItemsChecked.add(entry.getValue());
-                            sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item you are searching, " + searchItemRoomTypeIds.get(entry.getValue()) + " is in this room!\"}{i:0}{i:2}{i:0}{i:-1}"));
-                        }
-                    }
+                    isItemInRoom(entry.getValue());
                 }
             }
+        });
+
+        intercept(HMessage.Direction.TOCLIENT, "Items", hMessage -> {
+            try{
+                searchedItemsChecked.clear();
+                wallIdToTypeId.clear();
+                for(HWallItem hWallItem : HWallItem.parse(hMessage.getPacket())) {
+                    if(!wallIdToTypeId.containsKey(hWallItem.getId())){
+                        wallIdToTypeId.put(hWallItem.getId(), hWallItem.getTypeId());
+                    }
+                }
+            }catch (Exception e) { System.out.println(e); }
         });
 
         intercept(HMessage.Direction.TOCLIENT, "Objects", hMessage -> {
@@ -285,12 +295,6 @@ public class MarketUtils extends ExtensionForm {
                     }
 
                 }
-                // need find fix for getting wallitem type ids
-//                for(HWallItem hWallItem : HWallItem.parse(hMessage.getPacket())) {
-//                    if(!wallIdToTypeId.containsKey(hWallItem.getId())){
-//                        wallIdToTypeId.put(hWallItem.getId(), hWallItem.getTypeId());
-//                    }
-//                }
             }catch (Exception e) { System.out.println(e); }
         });
 
@@ -319,17 +323,7 @@ public class MarketUtils extends ExtensionForm {
             callItemAverage(itemTypeId, wallItem);
             tradedItemsChecked.add(itemTypeId);
             HPacket packet = gAsync.awaitPacket(new AwaitingPacket("MarketplaceItemStats", HMessage.Direction.TOCLIENT, 1000));
-            int value = -1;
-            if(wallItem == 2) {
-                for (int i = 0; i < 6; i++) {
-                    if(i == 4)
-                        value = packet.readInteger();
-                    else
-                        packet.readInteger();
-                }
-            }else {
-                value = packet.readInteger();
-            }
+            int value = packet.readInteger();
             if(value == 0)
                 sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item " + itemName + " has no average in the marketplace!\"}{i:0}{i:2}{i:0}{i:-1}"));
             else
@@ -354,12 +348,27 @@ public class MarketUtils extends ExtensionForm {
 
         wallJson = jsonObj.getJSONObject("wallitemtypes").getJSONArray("furnitype");
         wallJson.forEach(o -> {
-                JSONObject item = (JSONObject)o;
+                JSONObject item = (JSONObject) o;
                 try {
                     String itemName = item.get("name").toString();
                     typeIdToNameWall.put(item.getInt("id"), itemName);
                 }catch (JSONException ignored) {}
         });
+    }
+
+    public void isItemInRoom(Integer item) {
+        if(searchItemRoomTypeIds.containsKey(item)) {
+            if(!searchedItemsChecked.contains(item)) {
+                searchedItemsChecked.add(item);
+                sendToClient(new HPacket("{in:Chat}{i:" + habboIndex + "}{s:\"Market Utils: The item you are searching, " + searchItemRoomTypeIds.get(item) + " is in this room!\"}{i:0}{i:2}{i:0}{i:-1}"));
+            }
+        }
+    }
+
+    public void waitAFckingSec(int millisecActually){
+        try {
+            Thread.sleep(millisecActually);
+        } catch (InterruptedException ignored) { }
     }
 
 }

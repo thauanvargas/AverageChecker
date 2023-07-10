@@ -10,6 +10,7 @@
         <module name="GCooler" />
         <module name="Derrubador" />
         <module name="GJason" />
+        <module name="MarketUtils" />
       </profile>
     </annotationProcessing>
   </component>
